@@ -24,12 +24,12 @@ textarea{width:100%;font-family:monospace}.row{display:flex;gap:8px;align-items:
 <details><summary>Hiệu chỉnh lưới (nếu ô tô bị lệch)</summary>
 <div class="row">Dịch X <input id="ox" type="number" step="0.5" value="0" style="width:70px"> Y <input id="oy" type="number" step="0.5" value="0" style="width:70px"></div>
 <p class="info">Đơn vị theo khổ phiếu (khoảng 14 đơn vị = 1 ô). Áp dụng cho ảnh quét tiếp theo.</p></details>
-<div id="sv"><div class="ov" id="sh"></div><div style="position:relative;flex:1;min-height:0"><video id="svid" playsinline muted style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000"></video><svg id="sq" style="position:absolute;inset:0;width:100%;height:100%" preserveAspectRatio="xMidYMid meet" viewBox="0 0 100 100"><polygon id="pg" points="" fill="rgba(109,255,154,.12)" stroke="#ffd24d" stroke-width="4"/></svg></div><div class="ov" id="sl" style="min-height:40px"></div>
+<div id="sv"><div class="ov" id="sh"></div><div id="svw" style="position:relative;flex:1;min-height:0"><video id="svid" playsinline muted style="position:absolute;inset:0;width:100%;height:100%;object-fit:contain;background:#000"></video><svg id="sq" style="position:absolute;inset:0;width:100%;height:100%" preserveAspectRatio="xMidYMid meet" viewBox="0 0 100 100"><polygon id="pg" points="" fill="rgba(109,255,154,.12)" stroke="#ffd24d" stroke-width="4"/></svg></div><div class="ov" id="dg" style="min-height:20px;opacity:.85"></div><div class="ov" id="sl" style="min-height:40px"></div>
 <div class="bar" style="padding:0 10px;justify-content:center"><button id="sc" style="font-size:18px;padding:14px 22px">📸 Chụp</button><button id="un" class="g">↩ Hủy ảnh vừa chụp</button><button id="sx" class="g">✔ Xong</button></div>
-<div class="ov"><label><input type="checkbox" id="au" checked> Tự động chụp khi khung phiếu/giấy đã ổn định</label></div></div>
+<div class="ov"><label><input type="checkbox" id="au" checked> Tự động chụp khi khung ổn định</label> · <b>Chạm vào hình để chụp ngay</b></div></div>
 <div id="qv" style="display:none;position:fixed;inset:0;background:#000;z-index:9;flex-direction:column;align-items:center;justify-content:center;gap:12px"><video id="qvid" playsinline muted style="width:100%;max-height:75vh;object-fit:contain"></video><div style="color:#fff;text-align:center;padding:0 12px">Đưa mã QR vào giữa khung, giữ máy thẳng, đủ sáng và đủ gần cho nét</div><button id="qx" class="g">✕ Đóng</button></div>
 <div id="st" class="info"></div><div id="list"></div>
-<div class="bar"><button id="sa" class="g">☑ Chọn hết</button><button id="shr">📤 Chia sẻ Zalo (PDF)</button><button id="pdf" class="g">📄 Tải PDF</button><button id="ex">⬇ Xuất Excel (CSV)</button><button id="cl" class="g">Xóa danh sách</button></div>
+<div class="bar"><button id="sa" class="g">☑ Chọn hết</button><button id="shr">📤 Chia sẻ Zalo (PDF)</button><button id="pdf" class="g">📄 Tải PDF</button><button id="zp" class="g">📦 Tải ảnh (ZIP)</button><button id="ex">⬇ Xuất Excel (CSV)</button><button id="cl" class="g">Xóa danh sách</button></div>
 <script>
 const $=s=>document.querySelector(s);let recs=[],keys={},rid=0;
 const LS={g:k=>{try{return localStorage.getItem(k)}catch(e){return null}},s:(k,v)=>{try{localStorage.setItem(k,v)}catch(e){}}};
@@ -166,15 +166,15 @@ function loop(){if(!cs)return;const v=$('#svid');
   const pg=$('#pg');$('#sq').setAttribute('viewBox',`0 0 ${v.videoWidth} ${v.videoHeight}`);
   if(q){lost=0;const f=v.videoWidth/w;pg.setAttribute('points',[q[0],q[1],q[3],q[2]].map(p=>(p[0]*f)+','+(p[1]*f)).join(' '));pg.setAttribute('stroke-width',Math.max(4,v.videoWidth/200));
    if(!armed){const mc=capQ?Math.max(...q.map((p,i)=>Math.hypot(p[0]-capQ[i][0],p[1]-capQ[i][1]))):0;moved=mc>M*.05?moved+1:0;if(moved>=2){armed=true;stable=0;last=null;moved=0}}
-   if(armed&&$('#au').checked){const mv=last?Math.max(...q.map((p,i)=>Math.hypot(p[0]-last[i][0],p[1]-last[i][1]))):1e9;stable=mv<M*.008?stable+1:0;last=q;pg.setAttribute('stroke',stable>=1?'#6dff9a':'#ffd24d');if(stable>=3){stable=0;capQ=q;snap()}}
-   else pg.setAttribute('stroke',armed?'#ffd24d':'#4da3ff')}
-  else{pg.setAttribute('points','');lost++;stable=0;last=null;if(lost>=4)armed=true}}
+   if(armed&&$('#au').checked){const mv=last?Math.max(...q.map((p,i)=>Math.hypot(p[0]-last[i][0],p[1]-last[i][1]))):1e9;stable=mv<M*.015?stable+1:0;last=q;pg.setAttribute('stroke',stable>=1?'#6dff9a':'#ffd24d');$('#dg').textContent=(mk&&q===mk?'Thấy phiếu (4 ô góc)':'Thấy tờ giấy')+(stable>=1?' · giữ yên...':' · đang rung, giữ chắc tay');if(stable>=2){stable=0;capQ=q;snap()}}
+   else{pg.setAttribute('stroke',armed?'#ffd24d':'#4da3ff');$('#dg').textContent='Đã chụp. Đổi sang trang khác (hoặc chạm hình để chụp thêm).'}}
+  else{pg.setAttribute('points','');$('#dg').textContent='Chưa thấy tờ giấy: đặt giấy trên nền tối, cho trọn cả tờ vào khung, hoặc chạm hình để chụp.';lost++;stable=0;last=null;if(lost>=4)armed=true}}
  setTimeout(loop,250)}
 $('#go').onclick=async()=>{try{cs=await navigator.mediaDevices.getUserMedia({video:{facingMode:{ideal:'environment'},width:{ideal:2560},height:{ideal:1440}}})}
  catch(e){return bad('Chrome không cho mở camera trực tiếp. Hãy chụp bằng máy ảnh thường rồi dùng nút "Chọn ảnh" (chọn nhiều ảnh một lần, theo thứ tự trang).')}
  const v=$('#svid');v.srcObject=cs;await v.play();$('#sv').style.display='flex';armed=true;stable=0;lost=0;last=null;capQ=null;moved=0;
  $('#sl').textContent='Đặt trang 1 (phiếu) vào khung, giữ yên. Khung vàng: đang tìm; xanh lá: sắp chụp; xanh dương: đã chụp, đổi trang khác.';hud();loop()};
-$('#sc').onclick=()=>{capQ=last;snap()};
+$('#sc').onclick=()=>{capQ=last;snap()};$('#svw').onclick=()=>{capQ=last;snap()};
 $('#sx').onclick=()=>{if(cs){cs.getTracks().forEach(t=>t.stop());cs=null}$('#sv').style.display='none';$('#st').textContent=`Đã quét ${recs.length} bài. Kiểm tra SBD, mã đề, rồi xuất PDF/Excel.`};
 /* ===== PDF ===== */
 function makePDF(P,w,h,sh){const PWp=595,mh=Math.round(PWp*h/w),th=Math.round(PWp*sh/w),PHp=mh+th,B=[],O=[],E=new TextEncoder();let len=0;
@@ -204,6 +204,24 @@ $('#shr').onclick=async()=>{const fresh=pdfF&&pdfSig==sig(),f=await ensurePDF();
  try{if(navigator.canShare&&navigator.canShare({files:[f]})){await navigator.share({files:[f],title:'Bài làm cả lớp'});$('#st').textContent='Chọn Zalo trong bảng chia sẻ.';return}}
  catch(e){if(e.name=='AbortError')return;if(e.name=='NotAllowedError'&&!fresh){$('#st').textContent='PDF đã tạo xong. Bấm "Chia sẻ Zalo" thêm một lần nữa để gửi.';return}}
  dl(f);$('#st').textContent='Máy không mở được chia sẻ trực tiếp. Đã tải PDF về thư mục Download: mở Zalo, chọn cuộc trò chuyện, đính kèm tệp tuluan_ca_lop.pdf.'};
+/* ===== ZIP ẢNH ===== */
+const crcT=(()=>{const t=[];for(let n=0;n<256;n++){let c=n;for(let k=0;k<8;k++)c=c&1?0xEDB88320^(c>>>1):c>>>1;t[n]=c>>>0}return t})();
+const crc32=u=>{let c=-1;for(let i=0;i<u.length;i++)c=crcT[(c^u[i])&255]^(c>>>8);return(c^-1)>>>0};
+function makeZip(F){const E=new TextEncoder(),P=[],C=[];let off=0;const u16=v=>[v&255,v>>8&255],u32=v=>[v&255,v>>8&255,v>>16&255,v>>>24&255];
+ for(const f of F){const nb=E.encode(f.n),crc=crc32(f.d),sz=f.d.length;
+  const lh=new Uint8Array([0x50,0x4b,3,4,20,0,0,8,0,0,0,0,0x21,0,...u32(crc),...u32(sz),...u32(sz),...u16(nb.length),0,0]);
+  const ch=new Uint8Array([0x50,0x4b,1,2,20,0,20,0,0,8,0,0,0,0,0x21,0,...u32(crc),...u32(sz),...u32(sz),...u16(nb.length),0,0,0,0,0,0,0,0,0,0,0,0,...u32(off)]);
+  P.push(lh,nb,f.d);C.push(ch,nb);off+=lh.length+nb.length+sz}
+ let cs=0;for(const x of C)cs+=x.length;
+ const end=new Uint8Array([0x50,0x4b,5,6,0,0,0,0,...u16(F.length),...u16(F.length),...u32(cs),...u32(off),0,0]);
+ return new Blob([...P,...C,end],{type:'application/zip'})}
+$('#zp').onclick=async()=>{const F=[];let n=0;
+ for(let i=0;i<recs.length;i++){const r=recs[i];if(!r.sel)continue;
+  for(let k=0;k<r.pages.length;k++){const nm=`${String(i+1).padStart(2,'0')}_SBD${r.sbd}_ma${r.md}_trang${k+1}.jpg`.replace(/[^0-9A-Za-z_.\-]/g,'_');
+   F.push({n:nm,d:new Uint8Array(await r.pages[k].arrayBuffer())});$('#st').textContent='Đang nén ảnh '+(++n)+'...';await new Promise(o=>setTimeout(o,0))}}
+ if(!F.length)return bad('Chưa có ảnh nào để lưu.');
+ const f=new File([makeZip(F)],'anh_bai_lam.zip',{type:'application/zip'});dl(f);
+ $('#st').textContent=`Đã tạo anh_bai_lam.zip gồm ${F.length} ảnh. Tệp nằm trong thư mục Tải xuống (Download) của máy; mở bằng ứng dụng Tệp, chạm vào tệp zip để giải nén.`};
 /* ===== NẠP ĐÁP ÁN ===== */
 function parseRows(R){const K={};R=R.map(r=>(r||[]).map(c=>String(c==null?'':c).trim()));
  for(const r of R){if(/^\d{3}$/.test(r[0])){const a=r.slice(1).join('').replace(/[^A-Da-d]/g,'').toUpperCase();if(a.length>=10)K[r[0]]=a}}
